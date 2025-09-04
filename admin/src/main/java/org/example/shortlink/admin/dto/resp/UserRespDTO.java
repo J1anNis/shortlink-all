@@ -6,6 +6,10 @@ import org.example.shortlink.admin.common.serialize.PhoneDesensitizationSerializ
 
 /**
  * 用户返回参数响应
+ *
+ * DTO是一种用于在不同层之间传输数据的容器，通常用于将数据库实体类转换为前端需要的格式。
+ * 这里的UserRespDTO就是将UserDO转换为前端需要的格式。
+ * 作用是避免将敏感信息暴露给前端。能够按需封装字段
  */
 @Data
 public class UserRespDTO {

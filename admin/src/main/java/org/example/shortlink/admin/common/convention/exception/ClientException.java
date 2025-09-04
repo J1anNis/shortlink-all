@@ -10,8 +10,8 @@ public class ClientException extends AbstractException {
 
     public ClientException(IErrorCode errorCode) {
         this(null, null, errorCode);
-    }
-
+    } // 只传 “错误码”，不传自定义消息和根源异常。
+    // 比如：客户端传的 “用户 ID 格式错误”，此时不需要额外写消息
     public ClientException(String message) {
         this(message, null, BaseErrorCode.CLIENT_ERROR);
     }
