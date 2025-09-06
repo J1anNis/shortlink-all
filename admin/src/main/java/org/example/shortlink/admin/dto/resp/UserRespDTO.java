@@ -31,6 +31,7 @@ public class UserRespDTO {
 
     /**
      * 手机号
+     * 在返回给前端时，进行才会脱敏处理，用于复制处理不会脱敏
      */
     @JsonSerialize(using = PhoneDesensitizationSerializer.class)
     private String phone;

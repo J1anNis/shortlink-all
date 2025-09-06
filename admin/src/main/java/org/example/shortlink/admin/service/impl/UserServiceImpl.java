@@ -46,6 +46,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if(userDO == null) {
             throw new ClientException(UserErrorCodeEnum.USER_NULL);
         }
+        // 创建数据库实体对象，将结果复制进去，UserRespDTO中包含加密字段
         UserRespDTO result = new UserRespDTO();
         BeanUtils.copyProperties(userDO, result);
         return result;
