@@ -58,7 +58,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
      */
     @Override
     public Boolean hasUsername(String username) {
-        return userRegisterCachePenetrationBloomFilter.contains(username);
+        return !userRegisterCachePenetrationBloomFilter.contains(username);
     }
 
 
@@ -68,7 +68,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
      */
     @Override
     public void register(UserRegisterReqDTO requestParam) {
-        if(hasUsername(requestParam.getUsername())) {
+        if(!hasUsername(requestParam.getUsername())) {
             throw new ClientException(USER_NAME_EXIST);
         }
         // 分布式锁，防止大量请求同时注册同一个用户名导致数据库压力过大
