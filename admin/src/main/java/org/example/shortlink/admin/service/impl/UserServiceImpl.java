@@ -2,6 +2,7 @@ package org.example.shortlink.admin.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.example.shortlink.admin.common.enums.UserErrorCodeEnum;
 import org.example.shortlink.admin.dao.entity.UserDO;
 import org.example.shortlink.admin.dao.mapper.UserMapper;
 import org.example.shortlink.admin.dto.req.UserRegisterReqDTO;
+import org.example.shortlink.admin.dto.req.UserUpdateReqDTO;
 import org.example.shortlink.admin.dto.resp.UserRespDTO;
 import org.example.shortlink.admin.service.UserService;
 import org.redisson.api.RBloomFilter;
@@ -18,9 +20,9 @@ import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import static org.example.shortlink.admin.common.constant.RedisCacheConstant.LOCK_USER_REGISTER_KEY;
 import static org.example.shortlink.admin.common.enums.UserErrorCodeEnum.USER_NAME_EXIST;
 import static org.example.shortlink.admin.common.enums.UserErrorCodeEnum.USER_SAVE_ERROR;
-import static org.example.shortlink.admin.common.constant.RedisCacheConstant.LOCK_USER_REGISTER_KEY;
 
 /**
  * 用户接口实现层
@@ -92,5 +94,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * 根据用户名更新用户信息
+     * @param requestParam 更新用户请求参数
+     */
+    @Override
+    public void update(UserUpdateReqDTO requestParam) {
+        // TODO 验证当前用户名是否为登录用户
+        LambdaUpdateWrapper<UserDO> updateWrapper = Wrappers.lambdaUpdate(UserDO.class)
+                .eq(UserDO::getUsername, requestParam.getUsername());
+        baseMapper.update(BeanUtil.toBean(requestParam, UserDO.class), updateWrapper);
     }
 }
