@@ -2,12 +2,14 @@ package org.example.shortlink.admin.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import groovy.util.logging.Slf4j;
 import org.example.shortlink.admin.common.biz.user.UserContext;
 import org.example.shortlink.admin.dao.entity.GroupDO;
 import org.example.shortlink.admin.dao.mapper.GroupMapper;
+import org.example.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import org.example.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
 import org.example.shortlink.admin.service.GroupService;
 import org.example.shortlink.admin.toolkit.RandomGenerator;
@@ -43,10 +45,24 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
         return BeanUtil.copyToList(groupDOList, ShortLinkGroupRespDTO.class);
     }
 
+    public void updateGroup(ShortLinkGroupUpdateReqDTO requestParam) {
+        LambdaUpdateWrapper<GroupDO> updateWrapper = Wrappers.lambdaUpdate(GroupDO.class)
+                .eq(GroupDO::getUsername, UserContext.getUsername())
+                .eq(GroupDO::getGid, requestParam.getGid())
+                .eq(GroupDO::getDelFlag, 0);
+
+        // 创建数据库实体类 GroupDO 的实例
+        // 只设置了 name 属性，表示只更新分组名称（这是典型的 "部分更新" 操作）
+        GroupDO groupDO = new GroupDO();
+        groupDO.setName(requestParam.getName());
+
+        // 会将 groupDO 中设置的字段（这里是 name）更新到符合 updateWrapper 条件的记录中
+        baseMapper.update(groupDO, updateWrapper);
+    }
+
     private boolean hasGid(String gid) {
         LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
                 .eq(GroupDO::getGid, gid)
-                // TODO 设置用户名
                 .eq(GroupDO::getUsername, UserContext.getUsername());
         GroupDO hasGroupFlag = baseMapper.selectOne(queryWrapper);
         return hasGroupFlag == null;
