@@ -6,9 +6,13 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import groovy.util.logging.Slf4j;
 import org.example.shortlink.admin.dao.entity.GroupDO;
 import org.example.shortlink.admin.dao.mapper.GroupMapper;
+import org.example.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
 import org.example.shortlink.admin.service.GroupService;
 import org.example.shortlink.admin.toolkit.RandomGenerator;
 import org.springframework.stereotype.Service;
+import cn.hutool.core.bean.BeanUtil;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -26,6 +30,16 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
                 .name(groupName)
                 .build();
         baseMapper.insert(groupDO);
+    }
+
+    public List<ShortLinkGroupRespDTO> listGroup() {
+        // TODO 从当前上下文获取用户名
+        LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
+                .eq(GroupDO::getDelFlag, 0)
+                .isNull(GroupDO::getUsername)
+                .orderByDesc(GroupDO::getSortOrder, GroupDO::getUpdateTime);
+        List<GroupDO> groupDOList = baseMapper.selectList(queryWrapper);
+        return BeanUtil.copyToList(groupDOList, ShortLinkGroupRespDTO.class);
     }
 
     private boolean hasGid(String gid) {
