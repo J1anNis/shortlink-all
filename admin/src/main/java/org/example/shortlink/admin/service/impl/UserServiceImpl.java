@@ -16,6 +16,7 @@ import org.example.shortlink.admin.dto.req.UserRegisterReqDTO;
 import org.example.shortlink.admin.dto.req.UserUpdateReqDTO;
 import org.example.shortlink.admin.dto.resp.UserLoginRespDTO;
 import org.example.shortlink.admin.dto.resp.UserRespDTO;
+import org.example.shortlink.admin.service.GroupService;
 import org.example.shortlink.admin.service.UserService;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
@@ -29,9 +30,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.example.shortlink.admin.common.constant.RedisCacheConstant.LOCK_USER_REGISTER_KEY;
-import static org.example.shortlink.admin.common.enums.UserErrorCodeEnum.USER_NAME_EXIST;
-import static org.example.shortlink.admin.common.enums.UserErrorCodeEnum.USER_SAVE_ERROR;
-import static org.example.shortlink.admin.common.enums.UserErrorCodeEnum.USER_EXIST;
+import static org.example.shortlink.admin.common.enums.UserErrorCodeEnum.*;
 
 /**
  * 用户接口实现层
@@ -43,6 +42,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     private final RBloomFilter<String> userRegisterCachePenetrationBloomFilter;
     private final RedissonClient redissonClient;
     private final StringRedisTemplate stringRedisTemplate;
+    private final GroupService groupService;
 
     /**
      * 根据用户名查询用户信息方法主体
@@ -103,12 +103,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 // 注册成功后，将用户名添加到布隆过滤器中
                 // 布隆过滤器的 add 方法用于添加元素
                 userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername());
+                groupService.saveGroup("默认分组");
                 return;
             }
             throw new ClientException(USER_NAME_EXIST); // 未获取到锁：抛出“用户名已存在”
         } finally {
             lock.unlock();
         }
+
     }
 
     /**
