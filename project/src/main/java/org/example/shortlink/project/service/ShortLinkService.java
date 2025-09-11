@@ -5,9 +5,12 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import org.example.shortlink.project.dao.entity.ShortLinkDO;
 import org.example.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import org.example.shortlink.project.dto.req.ShortLinkPageReqDTO;
+import org.example.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import org.example.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import org.example.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.List;
 
 /**
  * 短链接接口层
@@ -27,4 +30,11 @@ public interface ShortLinkService extends IService<ShortLinkDO> {
      * @return 短链接分页查询响应参数
      */
     IPage<ShortLinkPageRespDTO> pageShortLink(@RequestBody ShortLinkPageReqDTO requestParam);
+
+    /**
+     * 短链接分组内数量统计
+     * @param requestParam 短链接分组内数量统计请求参数
+     * @return 短链接分组内数量统计响应参数
+     */
+    List<ShortLinkGroupCountQueryRespDTO> groupShortLinkCount(List<String> requestParam);
 }
