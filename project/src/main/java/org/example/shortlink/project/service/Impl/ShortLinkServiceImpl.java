@@ -33,11 +33,11 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
-        String shortLinkSuffix = generateSuffix(requestParam);
+        String shortLinkSuffix = generateSuffix(requestParam); // 生成短链接后缀
         String fullShortUrl = StrBuilder.create(requestParam.getDomain())
                 .append("/")
                 .append(shortLinkSuffix)
-                .toString();
+                .toString(); // 生成完整短链接
         ShortLinkDO shortLinkDO = ShortLinkDO.builder()
                 .domain(requestParam.getDomain())
                 .originUrl(requestParam.getOriginUrl())
@@ -49,10 +49,10 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .shortUri(shortLinkSuffix)
                 .enableStatus(0)
                 .fullShortUrl(fullShortUrl)
-                .build();
+                .build(); // 构建短链接DO
         try {
             baseMapper.insert(shortLinkDO); // 插入数据库
-        } catch(DuplicateKeyException ex) {
+        } catch(DuplicateKeyException ex) { // 处理重复短链接异常
             LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
                             .eq(ShortLinkDO::getFullShortUrl, fullShortUrl);
             if(baseMapper.selectOne(queryWrapper) != null) {
@@ -60,7 +60,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 throw new ServiceException("短链接重复");
             }
         }
-        ShortUriCreateCachePenetrationBloomFilter.add(shortLinkSuffix);
+        ShortUriCreateCachePenetrationBloomFilter.add(shortLinkSuffix); // 短链接加入布隆过滤器
 
         return ShortLinkCreateRespDTO.builder()
                 .fullShortUrl(shortLinkDO.getFullShortUrl())
@@ -76,13 +76,18 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .eq(ShortLinkDO::getEnableStatus, 0)
                 .eq(ShortLinkDO::getDelFlag, 0)
                 .orderByDesc(ShortLinkDO::getCreateTime);
-        IPage<ShortLinkDO> resultPage = baseMapper.selectPage(requestParam, queryWrapper);
+        IPage<ShortLinkDO> resultPage = baseMapper.selectPage(requestParam, queryWrapper); // 分页查询
 
         // ShortLinkDO 包含数据库表的所有字段（可能包含敏感信息或前端不需要的字段）
         // 而 ShortLinkPageRespDTO 只包含前端需要展示的字段，通过转换实现 “数据隔离” 和 “按需返回”。
         return resultPage.convert(each -> BeanUtil.toBean(each, ShortLinkPageRespDTO.class));
     }
 
+    /**
+     * 生成短链接后缀
+     * @param requestParam 短链接创建请求参数
+     * @return 短链接后缀
+     */
     private String generateSuffix(ShortLinkCreateReqDTO requestParam) {
         String shortUri;
         int customGenerateCount = 0;
@@ -90,9 +95,9 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             if(customGenerateCount > 10) {
                 throw new ServiceException("短链接频繁生成，请稍后再试");
             }
-            String originUrl = requestParam.getOriginUrl();
-            originUrl += System.currentTimeMillis(); // 加入当前时间戳，避免继续冲突
-            shortUri = HashUtil.hashToBase62(originUrl);
+            String temp_originUrl = requestParam.getOriginUrl();
+            temp_originUrl += System.currentTimeMillis(); // 加入当前时间戳，避免继续冲突
+            shortUri = HashUtil.hashToBase62(temp_originUrl);
             if(!ShortUriCreateCachePenetrationBloomFilter.contains(shortUri)) {
                 break;
             }
