@@ -18,11 +18,13 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
         strictInsertFill(metaObject, "createTime", Date::new, Date.class);
         strictInsertFill(metaObject, "updateTime", Date::new, Date.class);
         strictInsertFill(metaObject, "delFlag", () -> 0, Integer.class);
+        log.info("插入填充结束...");
     }
 
     @Override
     public void updateFill(MetaObject metaObject) {
         log.info("开始更新填充...");
         strictInsertFill(metaObject, "updateTime", Date::new, Date.class);
+        log.info("更新填充结束...");
     }
 }

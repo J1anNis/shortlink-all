@@ -78,6 +78,12 @@ public class UserTransmitFilter implements Filter {
                     returnJson((HttpServletResponse) servletResponse, JSON.toJSONString(Results.failure(new ClientException(USER_TOKEN_FAIL))));
                     return;
                 }
+
+                /**
+                 * userInfoJsonStr：从 Redis 中查询到的用户信息（是一个 Object 类型，实际存储的是 JSON 格式的字符串，比如 {"userId": "123", "username": "admin", "realName": "张三"}）。
+                 * userInfoJsonStr.toString()：将 Redis 中获取的 Object 转为字符串（因为 JSON.parseObject 需要字符串参数）。
+                 * JSON.parseObject(..., UserInfoDTO.class)：借助 FastJSON 工具，将 JSON 字符串转换为 UserInfoDTO 类型的对象（自动映射 JSON 中的键到 UserInfoDTO 的属性，如 userId 对应 UserInfoDTO 的 userId 字段）。
+                 */
                 UserInfoDTO userInfoDTO = JSON.parseObject(userInfoJsonStr.toString(), UserInfoDTO.class);
                 UserContext.setUser(userInfoDTO);
 
