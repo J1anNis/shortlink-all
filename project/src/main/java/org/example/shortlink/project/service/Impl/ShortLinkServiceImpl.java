@@ -41,9 +41,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static org.example.shortlink.project.common.constant.RedisKeyConstant.GOTO_SHORT_LINK_KEY;
 import static org.example.shortlink.project.common.constant.RedisKeyConstant.LOCK_GOTO_SHORT_LINK_KEY;
+import static org.example.shortlink.project.common.constant.RedisKeyConstant.GOTO_IS_NULL_SHORT_LINK_KEY;
 
 /**
  * 短链接服务接口实现层
@@ -53,7 +55,7 @@ import static org.example.shortlink.project.common.constant.RedisKeyConstant.LOC
 @RequiredArgsConstructor
 public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLinkDO> implements ShortLinkService {
 
-    private final RBloomFilter<String> ShortUriCreateCachePenetrationBloomFilter;
+    private final RBloomFilter<String> shortUriCreateCachePenetrationBloomFilter;
     private final ShortLinkGotoMapper shortLinkGotoMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
@@ -92,7 +94,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 throw new ServiceException("短链接重复");
             }
         }
-        ShortUriCreateCachePenetrationBloomFilter.add(fullShortUrl); // 短链接加入布隆过滤器
+        shortUriCreateCachePenetrationBloomFilter.add(fullShortUrl); // 短链接加入布隆过滤器
 
         return ShortLinkCreateRespDTO.builder()
                 .fullShortUrl("http://" + shortLinkDO.getFullShortUrl())
@@ -185,6 +187,17 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             ((HttpServletResponse) response).sendRedirect(originalLink);
             return;
         }
+
+        boolean contains = shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl);
+        if(!contains) {
+            return;
+        }
+
+        String gotoIsNullShortLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl));
+        if(StrUtil.isNotBlank(gotoIsNullShortLink)) {
+            return;
+        }
+
         RLock lock = redissonClient.getLock(String.format(LOCK_GOTO_SHORT_LINK_KEY, fullShortUrl));
         lock.lock();
         try{
@@ -197,8 +210,9 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
             ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoQueryWrapper);
             if(shortLinkGotoDO == null) {
+                stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.MINUTES);
                 // 严谨来说，这里需要进行封控
-                throw new ClientException("短链接不存在");
+                return;
             }
             LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
                     .eq(ShortLinkDO::getGid, shortLinkGotoDO.getGid())
@@ -230,7 +244,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             String temp_originUrl = requestParam.getOriginUrl();
             temp_originUrl += System.currentTimeMillis(); // 加入当前时间戳，避免继续冲突
             shortUri = HashUtil.hashToBase62(temp_originUrl);
-            if(!ShortUriCreateCachePenetrationBloomFilter.contains(shortUri)) {
+            if(!shortUriCreateCachePenetrationBloomFilter.contains(shortUri)) {
                 break;
             }
             customGenerateCount++;
