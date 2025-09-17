@@ -103,7 +103,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 // 注册成功后，将用户名添加到布隆过滤器中
                 // 布隆过滤器的 add 方法用于添加元素
                 userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername());
-                groupService.saveGroup("默认分组");
+                groupService.saveGroup(requestParam.getUsername(), "默认分组");
                 return;
             }
             throw new ClientException(USER_NAME_EXIST); // 未获取到锁：抛出“用户名已存在”

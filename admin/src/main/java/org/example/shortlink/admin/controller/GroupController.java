@@ -12,6 +12,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * 标识这是一个 REST 风格的控制器，所有方法的返回值会自动转换为 JSON 格式（无需额外加@ResponseBody）
+ * Lombok 注解，自动生成包含所有final字段的构造方法，用于依赖注入（这里注入了GroupService）
+ * 构造方法会在Spring容器初始化时自动调用，将GroupService实例注入到groupService字段中
+ */
 @RestController
 @RequiredArgsConstructor
 public class GroupController {
