@@ -197,11 +197,13 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
         boolean contains = shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl);
         if(!contains) {
+            ((HttpServletResponse) response).sendRedirect("/page/notfound");
             return;
         }
 
         String gotoIsNullShortLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl));
         if(StrUtil.isNotBlank(gotoIsNullShortLink)) {
+            ((HttpServletResponse) response).sendRedirect("/page/notfound");
             return;
         }
 
@@ -218,7 +220,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoQueryWrapper);
             if(shortLinkGotoDO == null) {
                 stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.MINUTES);
-                // 严谨来说，这里需要进行封控
+                ((HttpServletResponse) response).sendRedirect("/page/notfound");
                 return;
             }
             LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
@@ -230,6 +232,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             if(shortLinkDO != null) {
                 if(shortLinkDO.getValidDate() != null && shortLinkDO.getValidDate().before(new Date())) {
                     stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.MINUTES);
+                    ((HttpServletResponse) response).sendRedirect("/page/notfound");
                     return;
                 }
                 stringRedisTemplate.opsForValue().set(
