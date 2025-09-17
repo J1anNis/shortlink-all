@@ -146,7 +146,11 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
         // ShortLinkDO 包含数据库表的所有字段（可能包含敏感信息或前端不需要的字段）
         // 而 ShortLinkPageRespDTO 只包含前端需要展示的字段，通过转换实现 “数据隔离” 和 “按需返回”。
-        return resultPage.convert(each -> BeanUtil.toBean(each, ShortLinkPageRespDTO.class));
+        return resultPage.convert(each -> {
+            ShortLinkPageRespDTO result = BeanUtil.toBean(each, ShortLinkPageRespDTO.class);
+            result.setDomain("http://" + result.getDomain());
+            return result;
+        });
     }
 
     @Override
