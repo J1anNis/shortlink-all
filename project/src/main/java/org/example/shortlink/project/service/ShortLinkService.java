@@ -2,6 +2,8 @@ package org.example.shortlink.project.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import org.example.shortlink.project.dao.entity.ShortLinkDO;
 import org.example.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import org.example.shortlink.project.dto.req.ShortLinkPageReqDTO;
@@ -44,4 +46,12 @@ public interface ShortLinkService extends IService<ShortLinkDO> {
      * @param requestParam 短链接修改请求参数
      */
     void updateShortLink(ShortLinkUpdateReqDTO requestParam);
+
+    /**
+     * 短链接跳转
+     * @param shortUri 短链接后缀
+     * @param request 短链接请求
+     * @param response 短链接响应
+     */
+    void restoreUrl(String shortUri, ServletRequest request, ServletResponse response);
 }

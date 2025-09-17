@@ -1,6 +1,8 @@
 package org.example.shortlink.project.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.example.shortlink.project.common.convention.result.Result;
 import org.example.shortlink.project.common.convention.result.Results;
@@ -24,6 +26,11 @@ import java.util.List;
 public class ShortLinkController {
 
     private final ShortLinkService shortLinkService;
+
+    @GetMapping("/{short-uri}")
+    public void restoreUrl(@PathVariable("short-uri") String shortUri, ServletRequest request, ServletResponse response){
+        shortLinkService.restoreUrl(shortUri, request, response);
+    }
 
     /**
      * 创建短链接

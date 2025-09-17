@@ -9,11 +9,17 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import groovy.util.logging.Slf4j;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.example.shortlink.project.common.convention.exception.ClientException;
 import org.example.shortlink.project.common.convention.exception.ServiceException;
 import org.example.shortlink.project.common.enums.VaildDateTypeEnum;
 import org.example.shortlink.project.dao.entity.ShortLinkDO;
+import org.example.shortlink.project.dao.entity.ShortLinkGotoDO;
+import org.example.shortlink.project.dao.mapper.ShortLinkGotoMapper;
 import org.example.shortlink.project.dao.mapper.ShortLinkMapper;
 import org.example.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import org.example.shortlink.project.dto.req.ShortLinkPageReqDTO;
@@ -41,6 +47,7 @@ import java.util.Objects;
 public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLinkDO> implements ShortLinkService {
 
     private final RBloomFilter<String> ShortUriCreateCachePenetrationBloomFilter;
+    private final ShortLinkGotoMapper shortLinkGotoMapper;
 
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
@@ -61,8 +68,13 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .enableStatus(0)
                 .fullShortUrl(fullShortUrl)
                 .build(); // 构建短链接DO
+        ShortLinkGotoDO shortLinkGotoDO = ShortLinkGotoDO.builder()
+                .gid(requestParam.getGid())
+                .fullShortUrl(fullShortUrl)
+                .build();
         try {
             baseMapper.insert(shortLinkDO); // 插入数据库
+            shortLinkGotoMapper.insert(shortLinkGotoDO); // 插入数据库
         } catch(DuplicateKeyException ex) { // 处理重复短链接异常
             LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
                             .eq(ShortLinkDO::getFullShortUrl, fullShortUrl);
@@ -71,10 +83,10 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 throw new ServiceException("短链接重复");
             }
         }
-        ShortUriCreateCachePenetrationBloomFilter.add(shortLinkSuffix); // 短链接加入布隆过滤器
+        ShortUriCreateCachePenetrationBloomFilter.add(fullShortUrl); // 短链接加入布隆过滤器
 
         return ShortLinkCreateRespDTO.builder()
-                .fullShortUrl(shortLinkDO.getFullShortUrl())
+                .fullShortUrl(requestParam.getDomainProtocol() + shortLinkDO.getFullShortUrl())
                 .originUrl(requestParam.getOriginUrl())
                 .gid(requestParam.getGid())
                 .build();
@@ -147,6 +159,30 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .groupBy("gid");
         List<Map<String, Object>> shortLinkDOList = baseMapper.selectMaps(queryWrapper);
         return BeanUtil.copyToList(shortLinkDOList, ShortLinkGroupCountQueryRespDTO.class);
+    }
+
+    @SneakyThrows
+    @Override
+    public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) {
+        String serverName = request.getServerName();
+        String fullShortUrl = serverName + '/' + shortUri;
+
+        LambdaQueryWrapper<ShortLinkGotoDO> linkGotoQueryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
+                .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
+        ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoQueryWrapper);
+        if(shortLinkGotoDO == null) {
+            // 严谨来说，这里需要进行封控
+            throw new ClientException("短链接不存在");
+        }
+        LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
+               .eq(ShortLinkDO::getGid, shortLinkGotoDO.getGid())
+               .eq(ShortLinkDO::getFullShortUrl, fullShortUrl)
+               .eq(ShortLinkDO::getDelFlag, 0)
+               .eq(ShortLinkDO::getEnableStatus, 0);
+        ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
+        if(shortLinkDO != null) {
+            ((HttpServletResponse) response).sendRedirect(shortLinkDO.getOriginUrl());
+        }
     }
 
     /**
