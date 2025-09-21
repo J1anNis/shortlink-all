@@ -11,7 +11,6 @@ import org.example.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
 import org.example.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import org.example.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import org.example.shortlink.project.dto.resp.ShortLinkPageRespDTO;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
@@ -19,6 +18,14 @@ import java.util.List;
  * 短链接接口层
  */
 public interface ShortLinkService extends IService<ShortLinkDO> {
+
+    /**
+     * 短链接跳转
+     * @param shortUri 短链接后缀
+     * @param request 短链接请求
+     * @param response 短链接响应
+     */
+    void restoreUrl(String shortUri, ServletRequest request, ServletResponse response);
 
     /**
      * 创建短链接
@@ -32,7 +39,7 @@ public interface ShortLinkService extends IService<ShortLinkDO> {
      * @param requestParam 短链接分页查询请求参数
      * @return 短链接分页查询响应参数
      */
-    IPage<ShortLinkPageRespDTO> pageShortLink(@RequestBody ShortLinkPageReqDTO requestParam);
+    IPage<ShortLinkPageRespDTO> pageShortLink(ShortLinkPageReqDTO requestParam);
 
     /**
      * 短链接分组内数量统计
@@ -47,11 +54,5 @@ public interface ShortLinkService extends IService<ShortLinkDO> {
      */
     void updateShortLink(ShortLinkUpdateReqDTO requestParam);
 
-    /**
-     * 短链接跳转
-     * @param shortUri 短链接后缀
-     * @param request 短链接请求
-     * @param response 短链接响应
-     */
-    void restoreUrl(String shortUri, ServletRequest request, ServletResponse response);
+
 }
