@@ -11,6 +11,7 @@ import org.example.shortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
 import org.example.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import org.example.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import org.example.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
+import org.example.shortlink.project.dto.req.RecycleBinSaveReqDTO;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.HashMap;
@@ -76,6 +77,14 @@ public interface ShortLinkRemoteService {
         String resultBodyStr = HttpUtil.get("http://127.0.0.1:8001/api/short-link/v1/title?url=" + url);
         return JSON.parseObject(resultBodyStr, new TypeReference<>() {
         });
+    }
+
+    /**
+     * 保存到回收站
+     * @param requestParam 保存回收站请求参数
+     */
+    default void saveRecycleBin(RecycleBinSaveReqDTO requestParam) {
+        HttpUtil.post("http://127.0.0.1:8001/api/short-link/v1/recycle-bin/save", JSON.toJSONString(requestParam));
     }
 
 }

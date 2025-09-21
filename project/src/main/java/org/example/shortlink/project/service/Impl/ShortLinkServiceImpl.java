@@ -180,6 +180,10 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .build();
     }
 
+    /**
+     * 短链接修改
+     * @param requestParam 短链接修改请求参数
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void updateShortLink(ShortLinkUpdateReqDTO requestParam) {
@@ -211,7 +215,14 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .eq(ShortLinkDO::getDelFlag, 0)
                     .eq(ShortLinkDO::getEnableStatus, 0)
                     .set(Objects.equals(requestParam.getValidDateType(), VaildDateTypeEnum.PERMANENT.getType()), ShortLinkDO::getValidDate, null);
+
             baseMapper.update(shortLinkDO, updateWrapper);
+            /**
+             * updateWrapper 告诉框架 “要更新哪条 / 哪些记录”（生成 WHERE 条件）；
+             * shortLinkDO 告诉框架 “要把这些记录改成什么样子”（生成 SET 字段）；
+             * MyBatis-Plus 自动拼接成 UPDATE SQL 并执行，最终完成数据库更新。
+             */
+
         } else {
             LambdaUpdateWrapper<ShortLinkDO> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
                     .eq(ShortLinkDO::getGid, hasShortLinkDO.getGid())
@@ -223,6 +234,11 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         }
     }
 
+    /**
+     * 短链接分页查询
+     * @param requestParam 短链接分页查询请求参数
+     * @return
+     */
     @Override
     public IPage<ShortLinkPageRespDTO> pageShortLink(ShortLinkPageReqDTO requestParam) {
         LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
@@ -241,7 +257,11 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         });
     }
 
-
+    /**
+     * 短链接分组内数量统计
+     * @param requestParam 短链接分组内数量统计请求参数
+     * @return
+     */
     @Override
     public List<ShortLinkGroupCountQueryRespDTO> groupShortLinkCount(List<String> requestParam) {
         QueryWrapper<ShortLinkDO> queryWrapper = Wrappers.query(new ShortLinkDO())
@@ -277,6 +297,11 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         return shortUri;
     }
 
+    /**
+     * 获取短链接的 favicon 图标 URL
+     * @param url 短链接 URL
+     * @return favicon 图标 URL
+     */
     @SneakyThrows
     private String getFavicon(String url) {
         URL targetUrl = new URL(url); // 解析成 URL 对象
