@@ -12,6 +12,7 @@ import org.example.shortlink.project.common.convention.exception.ServiceExceptio
 import org.example.shortlink.project.dao.entity.ShortLinkDO;
 import org.example.shortlink.project.dao.mapper.ShortLinkMapper;
 import org.example.shortlink.project.dto.req.RecycleBinRecoverReqDTO;
+import org.example.shortlink.project.dto.req.RecycleBinRemoveReqDTO;
 import org.example.shortlink.project.dto.req.RecycleBinSaveReqDTO;
 import org.example.shortlink.project.dto.req.ShortLinkRecycleBinPageReqDTO;
 import org.example.shortlink.project.dto.resp.ShortLinkPageRespDTO;
@@ -99,5 +100,35 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
 
         baseMapper.update(shortLinkDO, updateWrapper);
         stringRedisTemplate.delete(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, requestParam.getFullShortUrl()));
+    }
+
+    /**
+     * 回收站删除短链接
+     * @param requestParam
+     */
+    @Override
+    public void removeRecycleBin(RecycleBinRemoveReqDTO requestParam) {
+        // todo 需要先校验回收站里是否存在以及是否有短链接
+        /**
+         * 彻底从数据库删除对应数据
+         * 需要配置mybatis-plus的软删除（已配置）
+         */
+        LambdaUpdateWrapper<ShortLinkDO> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
+                .eq(ShortLinkDO::getGid, requestParam.getGid())
+                .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                .eq(ShortLinkDO::getEnableStatus, 1)
+                .eq(ShortLinkDO::getDelFlag, 0);
+
+        baseMapper.delete(updateWrapper);
+        /**
+         * 将数据的delFlag字段置为1
+        LambdaUpdateWrapper<ShortLinkDO> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
+                .set(ShortLinkDO::getDelFlag, 1)
+                .eq(ShortLinkDO::getGid, requestParam.getGid())
+                .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                .eq(ShortLinkDO::getEnableStatus, 1)
+                .eq(ShortLinkDO::getDelFlag, 0);
+        baseMapper.update(null, updateWrapper);
+        */
     }
 }
