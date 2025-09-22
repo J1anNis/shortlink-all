@@ -11,6 +11,7 @@ public class DataBaseConfiguration {
 
     /**
      * 分页插件
+     *
      * @return MyBatis-Plus拦截器对象
      */
     @Bean
