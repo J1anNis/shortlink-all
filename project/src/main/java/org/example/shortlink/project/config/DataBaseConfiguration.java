@@ -11,6 +11,7 @@ public class DataBaseConfiguration {
 
     /**
      * 分页插件
+     * 能够自动对查询结果进行分页
      * @return
      */
     @Bean
